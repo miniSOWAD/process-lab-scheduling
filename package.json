@@ -1,0 +1,7 @@
+{
+  "name": "process-lab", "version": "1.0.0", "private": true,
+  "scripts": {"dev":"next dev", "build":"next build", "start":"next start", "typecheck":"tsc --noEmit", "test":"tsc lib/models.ts --target es2020 --module commonjs --outDir .test-build --strict && node --test tests/models.test.cjs"},
+  "dependencies": {"next":"^15.5.0", "react":"^19.1.0", "react-dom":"^19.1.0"},
+  "devDependencies": {"typescript":"^5.8.3", "@types/node":"^22.0.0", "@types/react":"^19.0.0", "@types/react-dom":"^19.0.0"},
+  "engines":{"node":">=20.9.0"}
+}
