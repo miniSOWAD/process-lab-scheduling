@@ -49,3 +49,22 @@ Each lesson includes reading material, the supplied source slide and references.
 Primary source is `class_07.pdf` (slides 15–19, CSE 4105, Md Mahbub E Noor, University of Barishal). Expanded explanations are instructional context. ELF addresses and trace messages are synthetic; no embedded lecture video was replayed. The scheduler event model demonstrates state transitions with simplified rotation/preemption; it is NOT the actual Linux EEVDF implementation. The separate EEVDF simulator models selection from provided eligibility and deadlines. CPU shares assume continuous contention on one CPU in the same fair-scheduling context. All simulations run in the browser and do not spawn real OS processes.
 
 No deployment was requested; this archive is project source. The development environment could not download npm packages, therefore a full Next.js build / live browser test was not performed here. The pure model tests and TS/TSX syntax checks can be run independently; run the build after installing dependencies to verify the full application on your machine.
+
+
+## Visual theme and animations
+
+The refreshed interface uses the requested palette:
+- Porcelain / white-grey: `#D0D3DA`
+- Graphite: `#24272C`
+- Signal red: `#E8322A`
+
+The default presentation is the light Porcelain + Graphite theme. Use the theme control in the top bar to switch to the Graphite presentation; both modes retain the same three-color identity.
+
+### Animated learning labs
+- **Slide 15 — ELF loader:** use Auto play or Next step to watch the executable move through file identification, ELF handling, mapping, stack setup and CPU entry. Memory segments and stack rows animate as they appear.
+- **Slide 16 — CPU scheduling:** use Auto animate to watch tasks move among running, ready and waiting states. The EEVDF lab has an animated eligibility scan.
+- **Slide 17 — Nice and CPU weights:** use Play CPU time to watch each process accumulate its proportional share over an accelerated observation window.
+- **Slide 18 — Process lifecycle:** use Auto play in the Stepper to follow normal exit/reaping or orphan reparenting.
+- **Slide 19 — Homework:** animate the fork loop round by round; the shell lab also supports Auto play for fork, exec, run/wait, exit and reap.
+
+Animations are instructional models, not live kernel traces. CSS motion respects the browser's `prefers-reduced-motion` setting.
