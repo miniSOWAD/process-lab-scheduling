@@ -1,6 +1,6 @@
 'use client';
-import {useEffect,useState} from 'react';
-import {advanceScheduler,chooseEligible,forkTree,initialScheduler,shares,weight} from '../lib/models';
+import {useEffect,useMemo,useState} from 'react';
+import {advanceScheduler,chooseEligible,forkTree,layoutForkTree,initialScheduler,shares,weight} from '../lib/models';
 export function Stepper({steps,index,setIndex}:{steps:string[];index:number;setIndex:(v:number)=>void}){const [playing,setPlaying]=useState(false);useEffect(()=>{if(!playing)return;if(index>=steps.length-1){setPlaying(false);return;}const t=setTimeout(()=>setIndex(index+1),1400);return()=>clearTimeout(t)},[playing,index,steps.length,setIndex]);return <><div className="steps" aria-label="Simulation stages">{steps.map((s,i)=><button key={s} className={i===index?'active':i<index?'done':''} onClick={()=>{setPlaying(false);setIndex(i)}} aria-current={i===index?'step':undefined}><span>{i<index?'✓':String(i+1).padStart(2,'0')}</span>{s}</button>)}</div><div className="controls"><button className="btn" onClick={()=>{setPlaying(false);setIndex(0)}}>↺ Reset</button><button className="btn" disabled={index===0} onClick={()=>{setPlaying(false);setIndex(index-1)}}>← Back</button><button className="btn" onClick={()=>{if(index===steps.length-1)setIndex(0);setPlaying(!playing)}}>{playing?'Ⅱ Pause':'▶ Auto play'}</button><button className="btn primary" disabled={index===steps.length-1} onClick={()=>{setPlaying(false);setIndex(index+1)}}>Next step →</button></div></>}
 const elfSteps=['Inspect file','Select loader','Commit image','Map segments','Build stack','Run entry'];
 const elfDescriptions=[['Read the identification bytes','The first bytes of the executable identify its format. 7f 45 4c 46 spells the ELF magic (DEL, E, L, F). The Linux exec machinery examines the initial buffer and invokes the appropriate handler.'],['No PT_INTERP in this example','The ELF loader inspects the program header table. This BusyBox example is static: there is no external program interpreter. Dynamic executables normally specify one with PT_INTERP.'],['Replace the previous program','execve replaces the old program image, not the process identity. Once committed, the old program cannot resume normally. This example keeps PID 411.'],['Map PT_LOAD segments','The kernel maps file-backed segments with read, write and execute permissions. The writable segment can have a memory size greater than its file size; the difference is initially zero-filled (.bss).'],['Prepare the initial stack','The stack contains argc, pointers to argv and envp, their terminating NULLs, and the auxiliary vector. The stack pointer RSP points to argc at entry on x86-64.'],['Transfer control to the entry point','The CPU starts at the designated entry point (e_entry for this illustrative fixed-address static binary). Runtime startup eventually calls main(). A dynamic binary first enters its interpreter.']];
@@ -14,5 +14,105 @@ export function ShareLab({homework=false}:{homework?:boolean}){const [ns,setNs]=
 const shellSteps=['Command','fork()','execvp()','Run / wait','exit()','Reap'];
 const shellCopy=['The shell (PID 410) receives ls. It must preserve itself.','fork creates child PID 411. The parent gets 411, the child gets 0.','The child calls execvp("ls", args). Its PID remains 411 while its program image changes.','The parent may block in waitpid(411, …); the child executes ls and writes output. This ordering is illustrative.','ls terminates. Its status may briefly remain as a zombie record while the parent is waiting.','waitpid returns the child PID and collects its status. The shell displays the next prompt.'];
 export function ShellLab(){const [step,setStep]=useState(0);return <div className="lab"><div className="labhead"><span className="live-dot"/> SHELL / PROCESS LIFECYCLE</div><Stepper steps={shellSteps} index={step} setIndex={setStep}/><div className="two-cols"><div key={`parent-${step}`} className="mini process"><div className="split"><span className="tag">PARENT · PID 410</span><span className="state">{step===3||step===4?'S · waiting':'R'}</span></div><h3>mysh</h3><div className="terminal">{step===0?'$ ls':step===1||step===2?'fork() → 411':step<=4?'waitpid(411, &status, 0)':'waitpid → 411\n$ _'}</div></div><div key={`child-${step}`} className="mini process"><div className="split"><span className="tag">CHILD · PID 411</span><span className="state">{step===0?'—':step===4?'Z':step===5?'Reaped':'R'}</span></div><h3>{step===0?'Not created':step===5?'Gone':step>=2?'ls':'mysh'}</h3><div className="terminal">{['No child yet','fork() → 0','execvp("ls", args)','notes.txt  main.c\nwrite(1, …)','exit(0) · status retained','Resources reaped'][step]}</div></div></div><div className="insight" aria-live="polite">{shellCopy[step]}</div></div>}
-export function ForkLab(){const [round,setRound]=useState(3);const [show,setShow]=useState(0);const [playing,setPlaying]=useState(false);const nodes=forkTree(show);const levels=Array.from({length:show+1},(_,i)=>nodes.filter(n=>n.born===i));const positions=new Map<number,{x:number;y:number}>();levels.forEach((level,i)=>level.forEach((n,j)=>positions.set(n.id,{x:((j+.5)*1100/level.length),y:38+i*85})));useEffect(()=>{if(!playing)return;if(show>=round){setPlaying(false);return;}const timer=window.setTimeout(()=>setShow(s=>Math.min(round,s+1)),850);return()=>window.clearTimeout(timer)},[playing,show,round]);const reset=()=>{setPlaying(false);setShow(0)};return <div className="lab"><div className="labhead"><span className="live-dot"/> FORK / PROCESS TREE <span className="right mono">NO REAL PROCESSES CREATED</span></div><label>Loop iterations <output>{round}</output><input type="range" min={0} max={6} value={round} onChange={e=>{setPlaying(false);setRound(+e.target.value);setShow(0)}}/></label><div className="controls"><button className="btn" disabled={show===0} onClick={()=>{setPlaying(false);setShow(0)}}>↺ Start over</button><button className="btn" disabled={show===0||playing} onClick={()=>setShow(s=>s-1)}>← Previous round</button><button className="btn primary" disabled={show===round||playing} onClick={()=>setShow(s=>s+1)}>Run next fork →</button><button className="btn" onClick={()=>{if(show===round)setShow(0);setPlaying(v=>!v)}}>{playing?'Ⅱ Pause animation':'▶ Animate fork loop'}</button></div><div className="simulation-progress"><span style={{width:`${round?show/round*100:100}%`}}/></div><div className="stat-grid"><div className="mini"><small>Rounds completed</small><strong className="metric">{show}/{round}</strong></div><div className="mini"><small>Total processes</small><strong className="metric">{nodes.length}</strong></div><div className="mini"><small>New children / fork calls</small><strong className="metric">{nodes.length-1}</strong></div><div className="mini"><small>printf calls at completion</small><strong className="metric">{show===round?nodes.length:'—'}</strong></div></div><div className="tree-scroll"><svg role="img" aria-label={`Process tree with ${nodes.length} processes, created during ${show} rounds`} viewBox={`0 0 1100 ${Math.max(115,show*85+80)}`} style={{minWidth:show>=5?1000:570}}>{nodes.filter(n=>n.parent!==null).map(n=>{const a=positions.get(n.parent!)!,b=positions.get(n.id)!;return <path key={n.id} className={n.born===show?'fork-edge-new':''} d={`M ${a.x} ${a.y+15} V ${b.y-40} H ${b.x} V ${b.y-15}`} fill="none" stroke="var(--edge)" strokeWidth="1.5"/>})}{nodes.map(n=>{const p=positions.get(n.id)!;return <g key={n.id} className={n.born===show&&show>0?'fork-node-new':'fork-node'}><rect x={p.x-15} y={p.y-15} width={30} height={30} rx={8} fill={n.born===show?'var(--mint)':'var(--blue)'}/><text x={p.x} y={p.y+4} textAnchor="middle" fontSize="10" fontWeight="bold" fill="#24272C">P{n.id}</text></g>})}</svg></div><p className="fine">Each node is a real conceptual process identity. Edges show creation parentage, not a duplicate parent at every round. All fork calls are assumed successful.</p><div className="formula">N = 2<sup>{show}</sup> = {nodes.length} · newly created = {nodes.length-1}</div><div className="terminal" aria-live="polite"><div className="term-title">Output at loop completion</div>{show===round?Array.from({length:nodes.length},()=> 'hi').join('  '):'Loop is still running…'}</div></div>}
+export function ForkLab(){
+  const [round,setRound]=useState(3);
+  const [show,setShow]=useState(0);
+  const [playing,setPlaying]=useState(false);
+  const baseNodes=useMemo(()=>forkTree(show),[show]);
+  const layout=useMemo(()=>layoutForkTree(baseNodes),[baseNodes]);
+  const nodes=layout.nodes;
+  const nodeWidth=56;
+  const nodeHalfHeight=21;
+  useEffect(()=>{
+    if(!playing)return;
+    if(show>=round){setPlaying(false);return;}
+    const timer=window.setTimeout(()=>setShow(s=>Math.min(round,s+1)),900);
+    return()=>window.clearTimeout(timer);
+  },[playing,show,round]);
+  const reset=()=>{setPlaying(false);setShow(0)};
+  return <div className="lab fork-lab">
+    <div className="labhead"><span className="live-dot"/> FORK / PROCESS TREE <span className="right mono">NO REAL PROCESSES CREATED</span></div>
+    <label>Loop iterations <output>{round}</output><input type="range" min={0} max={6} value={round} onChange={e=>{setPlaying(false);setRound(+e.target.value);setShow(0)}}/></label>
+    <div className="controls">
+      <button className="btn" disabled={show===0} onClick={reset}>↺ Start over</button>
+      <button className="btn" disabled={show===0||playing} onClick={()=>setShow(s=>s-1)}>← Previous round</button>
+      <button className="btn primary" disabled={show===round||playing} onClick={()=>setShow(s=>s+1)}>Run next fork →</button>
+      <button className="btn" onClick={()=>{if(show===round)setShow(0);setPlaying(v=>!v)}}>{playing?'Ⅱ Pause animation':'▶ Animate fork loop'}</button>
+    </div>
+    <div className="simulation-progress"><span style={{width:`${round?show/round*100:100}%`}}/></div>
+    <div className="stat-grid">
+      <div className="mini"><small>Rounds completed</small><strong className="metric">{show}/{round}</strong></div>
+      <div className="mini"><small>Total processes</small><strong className="metric">{nodes.length}</strong></div>
+      <div className="mini"><small>New children / fork calls</small><strong className="metric">{nodes.length-1}</strong></div>
+      <div className="mini"><small>printf calls at completion</small><strong className="metric">{show===round?nodes.length:'—'}</strong></div>
+    </div>
+    <div className="fork-legend" aria-label="Process tree legend">
+      <span><i className="fork-legend-node old"/> Existing process</span>
+      <span><i className="fork-legend-node fresh"/> Created in this round</span>
+      <span className="fork-legend-note">Each curved connector represents one fork() parent → child relationship.</span>
+    </div>
+    <div className="tree-scroll fork-tree-scroll">
+      <svg role="img" aria-label={`Process genealogy with ${nodes.length} processes after ${show} fork rounds`} viewBox={`0 0 ${layout.width} ${layout.height}`} style={{minWidth:layout.width>1100?`${layout.width}px`:'100%'}}>
+        <defs>
+          <linearGradient id="fork-neutral-top" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#F1F3F6"/><stop offset="100%" stopColor="#B9BEC6"/>
+          </linearGradient>
+          <linearGradient id="fork-red-top" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#FF766F"/><stop offset="100%" stopColor="#E8322A"/>
+          </linearGradient>
+          <linearGradient id="fork-neutral-side" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#9299A3"/><stop offset="100%" stopColor="#626973"/>
+          </linearGradient>
+          <linearGradient id="fork-red-side" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#D52B24"/><stop offset="100%" stopColor="#8F1713"/>
+          </linearGradient>
+          <filter id="fork-node-shadow" x="-50%" y="-60%" width="200%" height="240%">
+            <feDropShadow dx="0" dy="5" stdDeviation="3.5" floodColor="#000000" floodOpacity=".34"/>
+          </filter>
+          <filter id="fork-edge-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2.1" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        {/* Individual curved edges: no shared horizontal bus, so branches cannot visually merge. */}
+        {nodes.filter(n=>n.parent!==null).map(n=>{
+          const parent=nodes.find(p=>p.id===n.parent)!;
+          const sourceOffset=(n.childIndex-(n.siblingCount-1)/2)*Math.min(12,24/Math.max(1,n.siblingCount-1));
+          const sx=parent.x+sourceOffset;
+          const sy=parent.y+nodeHalfHeight-3;
+          const ex=n.x;
+          const ey=n.y-nodeHalfHeight+2;
+          const dy=ey-sy;
+          const curve=Math.max(22,dy*.42);
+          const d=`M ${sx} ${sy} C ${sx} ${sy+curve}, ${ex} ${ey-curve}, ${ex} ${ey}`;
+          const fresh=n.born===show&&show>0;
+          const delay=Math.min(n.id,18)*42;
+          return <g key={`edge-${n.id}`}>
+            <path d={d} fill="none" stroke="#000000" strokeOpacity=".24" strokeWidth="6" strokeLinecap="round" transform="translate(0 2)"/>
+            <path d={d} fill="none" stroke={fresh?'var(--accent)':'var(--edge)'} strokeOpacity={fresh?1:.88} strokeWidth={fresh?2.7:2.2} strokeLinecap="round" pathLength={fresh?1:undefined} className={fresh?'fork-edge-3d-new':'fork-edge-3d'} style={fresh?{animationDelay:`${delay}ms`}:undefined}/>
+          </g>;
+        })}
+        {/* Nodes are positioned by graph depth, not by fork-loop round. */}
+        {nodes.map(n=>{
+          const fresh=n.born===show&&show>0;
+          const delay=Math.min(n.id,18)*42;
+          return <g key={n.id} transform={`translate(${n.x} ${n.y})`}>
+            <g className={`fork-node-3d ${fresh?'fork-node-3d-new':''}`} style={fresh?{animationDelay:`${delay}ms`}:undefined}>
+              <title>{`P${n.id}: ${n.parent===null?'original process':`child of P${n.parent}`}; created in round ${n.born}; tree depth ${n.depth}`}</title>
+              <ellipse cx="0" cy="24" rx="25" ry="6" fill="#000000" opacity=".22"/>
+              <path d="M -26 -14 L 19 -14 L 26 -7 L 26 16 Q 26 22 20 22 H -20 Q -26 22 -26 16 Z" fill={fresh?'url(#fork-red-side)':'url(#fork-neutral-side)'}/>
+              <path d="M 19 -20 L 26 -13 L 26 16 Q 26 22 20 22 H 17 L 17 -13 Z" fill={fresh?'#A91F19':'#777E88'} opacity=".88"/>
+              <path d="M -26 -20 H 18 Q 23 -20 26 -14 V 12 Q 26 18 20 18 H -20 Q -26 18 -26 12 Z" fill={fresh?'url(#fork-red-top)':'url(#fork-neutral-top)'} stroke={fresh?'#FF9A94':'#FFFFFF'} strokeOpacity=".75" strokeWidth="1.1" filter="url(#fork-node-shadow)"/>
+              <path d="M -17 -14 H 11" stroke="#FFFFFF" strokeOpacity={fresh?'.5':'.8'} strokeWidth="2" strokeLinecap="round"/>
+              <text x="0" y="4" textAnchor="middle" fontSize="12" fontWeight="800" letterSpacing="-.2" fill={fresh?'#FFFFFF':'#24272C'}>P{n.id}</text>
+              <text x="0" y="34" textAnchor="middle" fontSize="8.5" fontWeight="650" fill="var(--muted)">R{n.born}</text>
+            </g>
+          </g>;
+        })}
+      </svg>
+    </div>
+    <p className="fine">Each process has exactly one creator (except P0). The tree is arranged by parent-child depth; a process can fork again in later loop rounds. All fork calls are assumed successful.</p>
+    <div className="formula">N = 2<sup>{show}</sup> = {nodes.length} · newly created = {nodes.length-1} · tree depth = {layout.maxDepth}</div>
+    <div className="terminal" aria-live="polite"><div className="term-title">Output at loop completion</div>{show===round?Array.from({length:nodes.length},()=> 'hi').join('  '):'Loop is still running…'}</div>
+  </div>;
+}
 export function LifecycleLab(){const [mode,setMode]=useState<'normal'|'orphan'>('normal');const [step,setStep]=useState(0);const stages=mode==='normal'?['Program','fork()','exec()','exit()','wait()']:['Program','fork()','Parent exits','Reparent','Child exits'];const descriptions=mode==='normal'?['A process running the shell has a task_struct, memory and resources.','A child is created with a separate PID and logically separate private memory.','The child replaces its program with a new image; its PID is unchanged.','The child has terminated; its exit record is retained (zombie).','The parent reaps the child using wait; the retained record is released.']:['A parent process exists.','A child process is created.','The parent terminates before the child.','The still-living child is adopted by PID 1 or another applicable subreaper. Reparenting occurs as part of parent termination.','The child terminates; the new parent can collect its status.'];return <div className="lab"><div className="labhead"><span className="live-dot"/> PROCESS LIFECYCLE / REVIEW</div><div className="tabs"><button className={mode==='normal'?'selected':''} onClick={()=>{setMode('normal');setStep(0)}}>Normal / zombie</button><button className={mode==='orphan'?'selected':''} onClick={()=>{setMode('orphan');setStep(0)}}>Orphan / reparenting</button></div><Stepper key={mode} steps={stages} index={step} setIndex={setStep}/><div className="two-cols"><div key={`life-parent-${mode}-${step}`} className="mini process"><small>PARENT</small><h3>{mode==='orphan'&&step>=2?'Original parent gone':'PID 410 · shell'}</h3><div className="state">{mode==='orphan'&&step>=3?'New reaper assigned':mode==='orphan'&&step===2?'Terminated':'Alive'}</div></div><div key={`life-child-${mode}-${step}`} className="mini process"><small>CHILD</small><h3>{step===0?'Not created':mode==='normal'&&step===4?'Reaped':'PID 411'}</h3><div className="state">{step===0?'—':mode==='normal'&&step===3?'Z · zombie':mode==='normal'&&step===4?'Gone':mode==='orphan'&&step>=2?step===4?'Terminated':'Alive · new parent':mode==='normal'&&step===2?'New executable':'R · runnable'}</div></div></div><div className="insight" aria-live="polite">{descriptions[step]}</div></div>}

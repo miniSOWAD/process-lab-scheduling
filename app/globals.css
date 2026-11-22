@@ -159,3 +159,27 @@ body{background:#D0D3DA}
 .memory-segments.mapped .segment:nth-child(5){animation-delay:.28s}
 @keyframes mapIn{0%{opacity:0;transform:translateX(12px) scale(.97)}100%{opacity:1;transform:translateX(0) scale(1)}}
 @media(prefers-reduced-motion:reduce){.memory-segments.mapped .segment{animation:none!important}}
+
+/* PROCESS TREE — independent genealogy branches with a dimensional node treatment */
+.fork-legend{display:flex;align-items:center;gap:15px;flex-wrap:wrap;margin:12px 0 8px;color:var(--muted);font-size:10px}
+.fork-legend>span{display:inline-flex;align-items:center;gap:6px}
+.fork-legend-node{display:inline-block;width:11px;height:11px;border-radius:4px;box-shadow:0 2px 4px #0004}
+.fork-legend-node.old{background:linear-gradient(135deg,#F1F3F6,#9299A3)}
+.fork-legend-node.fresh{background:linear-gradient(135deg,#FF766F,#E8322A)}
+.fork-legend-note{margin-left:auto}
+.fork-tree-scroll{background:radial-gradient(ellipse at 50% 0%,color-mix(in srgb,var(--surface2) 72%,transparent),var(--bg) 72%)}
+.fork-tree-scroll svg{display:block;width:100%;height:auto;min-height:340px;overflow:visible}
+.fork-node-3d{transform-box:fill-box;transform-origin:center;transition:transform .22s ease,filter .22s ease;cursor:default}
+.fork-node-3d:hover{transform:translateY(-3px) scale(1.055);filter:drop-shadow(0 8px 8px #0005)}
+.fork-node-3d-new{animation:forkNode3D .82s cubic-bezier(.16,.86,.28,1.22) both}
+.fork-edge-3d{transition:stroke .2s ease,opacity .2s ease}
+.fork-edge-3d-new{stroke-dasharray:1;stroke-dashoffset:1;animation:forkEdgeTrace .82s cubic-bezier(.2,.7,.25,1) forwards;filter:url(#fork-edge-glow)}
+@keyframes forkNode3D{
+  0%{opacity:0;transform:perspective(600px) translateY(-20px) rotateX(62deg) scale(.42)}
+  58%{opacity:1;transform:perspective(600px) translateY(3px) rotateX(-8deg) scale(1.09)}
+  78%{transform:perspective(600px) translateY(-2px) rotateX(3deg) scale(.985)}
+  100%{opacity:1;transform:perspective(600px) translateY(0) rotateX(0) scale(1)}
+}
+@keyframes forkEdgeTrace{0%{opacity:.12;stroke-dashoffset:1}18%{opacity:1}100%{opacity:1;stroke-dashoffset:0}}
+@media(max-width:600px){.fork-legend-note{width:100%;margin-left:0}.fork-tree-scroll svg{min-height:280px}}
+@media(prefers-reduced-motion:reduce){.fork-node-3d,.fork-node-3d-new,.fork-edge-3d-new{animation:none!important;transition:none!important;transform:none!important}}

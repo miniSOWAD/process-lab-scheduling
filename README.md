@@ -7,11 +7,11 @@ A responsive, self-contained interactive learning website written in TypeScript,
 Install Node.js 20.9 or later (Node 22 recommended) and npm. Open a terminal in this folder:
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Open http://localhost:3000. On Windows you can use PowerShell or Command Prompt. If the port is occupied, Next typically offers another port. A network connection is required on the first dependency install; after that the learning experience does not need an external service. The dependency ranges allow supported patch updates; no lockfile was generated because npm registry access was unavailable during packaging.
+Open http://localhost:3000. On Windows you can use PowerShell or Command Prompt. If the port is occupied, Next typically offers another port. A network connection is required on the first dependency install; after that the learning experience does not need an external service. The included package-lock.json pins the dependency tree for reproducible installs.
 
 ## Build / verify
 
@@ -30,7 +30,7 @@ npm start
 - Slide 16: runnable tasks, per-CPU run queues, block/tick/wake controls, scheduling classes/policies, conceptual EEVDF eligibility lab.
 - Slide 17: exact 40-entry nice-weight table, live two/three-task CPU-share calculator, measurement comparison, observation-window calculations.
 - Slide 18: five core concepts, process lifecycle and normal/zombie/orphan simulation.
-- Slide 19: all three original Homework 7 questions, complete worked answers, actual conceptual fork tree, shell execution stepper and nice 0 vs nice 3 calculator.
+- Slide 19: all three original Homework 7 questions, complete worked answers, a genealogy-based fork tree with separate parent-to-child curves and dimensional node animations, shell execution stepper and nice 0 vs nice 3 calculator.
 
 Each lesson includes reading material, the supplied source slide and references. Completion and light/dark preference are stored locally in the browser. Direct links use `#slide-15` through `#slide-19`.
 
@@ -68,3 +68,6 @@ The default presentation is the light Porcelain + Graphite theme. Use the theme 
 - **Slide 19 — Homework:** animate the fork loop round by round; the shell lab also supports Auto play for fork, exec, run/wait, exit and reap.
 
 Animations are instructional models, not live kernel traces. CSS motion respects the browser's `prefers-reduced-motion` setting.
+
+### Fork tree update
+The Homework 1 fork simulation now lays out nodes by actual parent-child depth rather than fork-loop generation. For three rounds the genealogy is P0 → (P1, P2, P4), P1 → (P3, P5), P2 → P6, and P3 → P7. Every child has one creator; connectors are separate curved paths rather than shared horizontal rails. Newly created nodes animate in with a 3D tilt/pop and the new edges draw in with a signal-red trace. The slider, step controls, round counts, process counts, fork-call counts and final `printf` output are preserved.
